@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     file_desc = open(argv[1], O_RDWR );
     if( file_desc < 0 ) {
-        perror("Error: ");
+        perror("Error opening file: ");
         exit(1);
     }
 
@@ -30,13 +30,13 @@ int main(int argc, char *argv[])
 
     ret_val = ioctl( file_desc, MSG_SLOT_CHANNEL, channel_id);
     if (ret_val < 0) {
-        perror("Error: ");
+        perror("Error changing channel: ");
         exit(1);
     }
 
     ret_val = write( file_desc, argv[3], strlen(argv[3]));
     if (ret_val < 0) {
-        perror("Error: ");
+        perror("Error writing to channel: ");
         exit(1);
     }
 
