@@ -170,7 +170,7 @@ static int device_release( struct inode* inode,
 // the device file attempts to read from it
 static ssize_t device_read( struct file* file,
                             char __user* buffer,
-                            ssize_t       length,
+                            size_t       length,
                             loff_t*      offset )
 {
 
@@ -219,7 +219,7 @@ static ssize_t device_read( struct file* file,
 // the device file attempts to write to it
 static ssize_t device_write( struct file*       file,
         const char __user* buffer,
-        ssize_t             length,
+        size_t             length,
         loff_t*            offset)
 {
     unsigned int channel_id;
