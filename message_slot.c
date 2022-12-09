@@ -22,6 +22,28 @@ MODULE_LICENSE("GPL");
 //Our custom definitions of IOCTL operations
 #include "message_slot.h"
 
+struct channel {
+    unsigned int channel_id;
+    char* message;
+    ssize_t length;
+    struct list_head channel_list ;
+};
+
+struct device {
+    unsigned long int device_minor;
+    struct list_head channel_list_head;
+    struct list_head device_list ;
+};
+
+struct channel *get_channel_from_device_ptr(unsigned int channel_id, struct device * d);
+struct device *get_device(unsigned long int device_minor);
+struct channel *get_channel(unsigned int channel_id, unsigned long int device_minor);
+void delete_device(unsigned long int device_minor);
+void delete_device_from_ptr(struct device *d);
+void delete_all_channels(struct list_head channel_list_head);
+void delete_all_devices(void);
+int create_device(unsigned long int device_minor);
+
 static struct list_head device_list_head;
 
 //================== HELPER FUNCTIONS ===========================
@@ -148,7 +170,7 @@ static int device_release( struct inode* inode,
 // the device file attempts to read from it
 static ssize_t device_read( struct file* file,
                             char __user* buffer,
-                            size_t       length,
+                            ssize_t       length,
                             loff_t*      offset )
 {
 
@@ -197,7 +219,7 @@ static ssize_t device_read( struct file* file,
 // the device file attempts to write to it
 static ssize_t device_write( struct file*       file,
         const char __user* buffer,
-        size_t             length,
+        ssize_t             length,
         loff_t*            offset)
 {
     unsigned int channel_id;
