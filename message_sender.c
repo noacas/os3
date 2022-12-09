@@ -5,14 +5,15 @@
 #include <sys/ioctl.h>  /* ioctl */
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <linux/ioctl.h>
+#include <linux/types.h>
 #include <string.h>
 
 static char* INVALID_INPUT_ERROR_MESSAGE = "usage: message_sender <file> <channel_id> <message>";
 
 int main(int argc, char *argv[])
 {
-    int ret_val, n, file_desc, channel_id;
+    int ret_val, file_desc, channel_id;
 
     if (argc != 4) {
         write(STDERR_FILENO, INVALID_INPUT_ERROR_MESSAGE, strlen(INVALID_INPUT_ERROR_MESSAGE));

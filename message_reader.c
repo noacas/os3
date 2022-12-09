@@ -5,7 +5,8 @@
 #include <sys/ioctl.h>  /* ioctl */
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <linux/ioctl.h>
+#include <linux/types.h>
 #include <string.h>
 
 static char* INVALID_INPUT_ERROR_MESSAGE = "usage: message_reader <file> <channel_id>";
@@ -13,7 +14,7 @@ static char* INVALID_INPUT_ERROR_MESSAGE = "usage: message_reader <file> <channe
 int main(int argc, char *argv[])
 {
     static char the_message[MAX_MESSAGE_LENGTH];
-    int ret_val, n, file_desc, channel_id;
+    int ret_val, file_desc, channel_id;
 
     if (argc != 3) {
         write(STDERR_FILENO, INVALID_INPUT_ERROR_MESSAGE, strlen(INVALID_INPUT_ERROR_MESSAGE));
