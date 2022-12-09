@@ -299,7 +299,7 @@ static int __init simple_init(void)
 }
 
 //---------------------------------------------------------------
-static void __exit si           mple_cleanup(void)
+static void __exit simple_cleanup(void)
 {
     // Unregister the device
     // Should always succeed
