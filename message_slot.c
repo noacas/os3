@@ -165,7 +165,7 @@ static ssize_t device_read( struct file* file,
         return -EINVAL;
     }
 
-    channel_id = (unsigned int) file->private_data;
+    channel_id = *(unsigned int *) file->private_data;
 
     if (channel_id == 0) {
         // no channel has been set on the file descriptor
@@ -213,7 +213,7 @@ static ssize_t device_write( struct file*       file,
         return -EINVAL;
     }
 
-    channel_id = (unsigned int) file->private_data;
+    channel_id = *(unsigned int *) file->private_data;
 
     if (channel_id == 0) {
         // no channel has been set on the file descriptor
