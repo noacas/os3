@@ -41,6 +41,6 @@ struct channel *get_channel(unsigned int channel_id, unsigned long int device_mi
 void delete_device(unsigned long int device_minor);
 void delete_device_from_ptr(struct device *d);
 void delete_all_channels(struct list_head channel_list_head);
-void delete_all_devices();
+void delete_all_devices(void);
 int create_device(unsigned long int device_minor);
 
