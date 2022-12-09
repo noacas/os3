@@ -97,7 +97,9 @@ void delete_all_channels(struct list_head channel_list_head) {
         // removing channel from list
         list_del(&entry->channel_list);
         // removing message from memory
-        kfree(entry->message);
+        if (entry->length > 0) {
+            kfree(entry->message);
+        }
         // removing channel struct from memory
         kfree(entry);
     }
@@ -155,9 +157,7 @@ static int device_open( struct inode* inode,
 }
 
 //---------------------------------------------------------------
-static int device_release( struct inode* inode,
-                           struct file*  file)
-{
+static int device_release( struct inode* inode, struct file*  file) {
     unsigned long int minor;
     // deleting all device channels
     minor = iminor(inode);
@@ -168,12 +168,7 @@ static int device_release( struct inode* inode,
 //---------------------------------------------------------------
 // a process which has already opened
 // the device file attempts to read from it
-static ssize_t device_read( struct file* file,
-                            char __user* buffer,
-                            size_t       length,
-                            loff_t*      offset )
-{
-
+static ssize_t device_read( struct file* file, char __user* buffer, size_t length, loff_t* offset ) {
     ssize_t i;
     unsigned int channel_id;
     unsigned long int device_minor;
