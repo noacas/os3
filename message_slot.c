@@ -124,7 +124,6 @@ static int device_open( struct inode* inode,
 {
     unsigned long int minor;
     int status;
-    printk("Invoking device_open(%p)\n", file);
     minor = iminor(inode);
     status = create_device(minor);
     if (status == SUCCESS) {
@@ -138,7 +137,6 @@ static int device_release( struct inode* inode,
                            struct file*  file)
 {
     unsigned long int minor;
-    printk("Invoking device_release(%p,%p)\n", inode, file);
     // deleting all device channels
     minor = iminor(inode);
     delete_device(minor);
@@ -242,7 +240,6 @@ static ssize_t device_write( struct file*       file,
         }
     }
 
-    printk("Invoking device_write(%p,%ld)\n", file, length);
     for( i = 0; i < length; ++i ) {
         get_user(c->message[i], &buffer[i]);
     }
@@ -260,8 +257,6 @@ static int device_ioctl( struct   file* file,
     // Switch channel id according to the ioctl called
     if( MSG_SLOT_CHANNEL == ioctl_command_id && ioctl_param != 0 ) {
         // Get the parameter given to ioctl by the process
-        printk( "Invoking ioctl: setting channel id "
-                "to %d\n", ioctl_param);
         file->private_data = (void *) &ioctl_param;
         return SUCCESS;
     }
@@ -286,9 +281,6 @@ struct file_operations Fops = {
 static int __init simple_init(void)
 {
     int rc = -1;
-    // init dev struct
-    memset( &device_info, 0, sizeof(struct chardev_info) );
-    spin_lock_init( &device_info.lock );
 
     // Register driver capabilities. Obtain major num
     rc = register_chrdev( MAJOR_NUM, DEVICE_RANGE_NAME, &Fops );
@@ -299,14 +291,6 @@ static int __init simple_init(void)
                 DEVICE_FILE_NAME, MAJOR_NUM );
         return rc;
     }
-
-    printk( "Registeration is successful. ");
-    printk( "If you want to talk to the device driver,\n" );
-    printk( "you have to create a device file:\n" );
-    printk( "mknod /dev/%s c %d 0\n", DEVICE_FILE_NAME, MAJOR_NUM );
-    printk( "You can echo/cat to/from the device file.\n" );
-    printk( "Dont forget to rm the device file and "
-            "rmmod when you're done\n" );
 
     // init device list head
     INIT_LIST_HEAD(&device_list_head);
