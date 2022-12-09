@@ -272,7 +272,7 @@ struct file_operations Fops = {
         .read           = device_read,
         .write          = device_write,
         .open           = device_open,
-        .ioctl = device_ioctl,
+        .unlocked_ioctl = device_ioctl,
         .release        = device_release,
 };
 
