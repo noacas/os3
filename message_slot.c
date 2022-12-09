@@ -250,10 +250,7 @@ static ssize_t device_write( struct file*       file,
 }
 
 //----------------------------------------------------------------
-static long device_ioctl( struct   file* file,
-                          unsigned int   ioctl_command_id,
-                          unsigned int  ioctl_param )
-{
+static long device_ioctl(struct file* file, unsigned int ioctl_command_id, unsigned long ioctl_param) {
     // Switch channel id according to the ioctl called
     if( MSG_SLOT_CHANNEL == ioctl_command_id && ioctl_param != 0 ) {
         // Get the parameter given to ioctl by the process
