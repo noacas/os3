@@ -99,9 +99,10 @@ struct message_slot *get_message_slot(unsigned long int device_minor) {
 
 int create_message_slot(unsigned long int device_minor, struct file *file) {
     struct file_data* file_data;
+    struct message_slot *m;
     printk("creating message_slot for minor %lu\n", device_minor);
     // if message_slot already exists no need for that
-    struct message_slot *m = get_message_slot(device_minor);
+    m = get_message_slot(device_minor);
     if (m == NULL) {
         m = (struct message_slot *) kmalloc(sizeof(struct message_slot), GFP_KERNEL);
         if (m == NULL) {
