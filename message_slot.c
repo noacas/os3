@@ -44,7 +44,7 @@ void delete_device(unsigned long int device_minor);
 void delete_device_from_ptr(struct device *d);
 void delete_all_channels(struct list_head channel_list_head);
 void delete_all_devices(void);
-int create_device(unsigned long int device_minor, file * file);
+int create_device(unsigned long int device_minor, struct file *file);
 
 static struct list_head device_list_head;
 
@@ -110,7 +110,7 @@ void delete_all_channels(struct list_head channel_list_head) {
     }
 }
 
-int create_device(unsigned long int device_minor, file *file) {
+int create_device(unsigned long int device_minor, struct file *file) {
     // if device already exists no need for that
     struct device_data * device_data;
     struct device *d = get_device(device_minor);
