@@ -110,10 +110,10 @@ int create_message_slot(unsigned long int device_minor, struct file *file) {
             printk("failed allocating memory to create message_slot\n");
             return -ENOMEM;
         }
+        m->device_minor = device_minor;
+        INIT_LIST_HEAD(&m->channel_list_head); // init channel list
+        list_add(&m->message_slot_list, &message_slot_list_head); // add message_slot to message_slot list
     }
-    m->device_minor = device_minor;
-    INIT_LIST_HEAD(&m->channel_list_head); // init channel list
-    list_add(&m->message_slot_list, &message_slot_list_head); // add message_slot to message_slot list
     printk("created message_slot for minor %lu successfully\n", device_minor);
 
     printk("creating file_data for new file\n");
