@@ -55,14 +55,14 @@ struct device *get_device(unsigned long int device_minor) {
         if (entry->device_minor == device_minor)
             return entry;
     }
-    printk("could not find device %l\n", device_minor);
+    printk("could not find device %ld\n", device_minor);
     return NULL;
 }
 
 struct channel *get_channel(unsigned int channel_id, unsigned long int device_minor) {
     struct device *d = get_device(device_minor);
     if (d == NULL) {
-        printk("could not find device %l in order to get channel %d\n", device_minor, channel_id);
+        printk("could not find device %ld in order to get channel %d\n", device_minor, channel_id);
         return NULL;
     }
     return get_channel_from_device_ptr(channel_id, d);
@@ -75,7 +75,7 @@ struct channel *get_channel_from_device_ptr(unsigned int channel_id, struct devi
         if (entry->channel_id == channel_id)
             return entry;
     }
-    printk("could not find channel %l from device ptr %p\n", channel_id, d);
+    printk("could not find channel %ld from device ptr %p\n", channel_id, d);
     return NULL;
 }
 
@@ -126,7 +126,7 @@ int create_device(unsigned long int device_minor) {
     d->device_minor = device_minor;
     INIT_LIST_HEAD(&d->channel_list_head); // init channel list
     list_add(&d->device_list, &device_list_head); // add device to device list
-    printk("created device for minor %l successfully\n", device_minor);
+    printk("created device for minor %ld successfully\n", device_minor);
     return SUCCESS;
 }
 
@@ -161,13 +161,13 @@ static int device_open( struct inode* inode,
     unsigned long int minor;
     int status;
     minor = iminor(inode);
-    printk("opening device for minor %l\n", minor);
+    printk("opening device for minor %ld\n", minor);
     status = create_device(minor);
     if (status == SUCCESS) {
-        printk("opened device for minor %l successfully\n", minor);
+        printk("opened device for minor %ld successfully\n", minor);
         return SUCCESS;
     }
-    printk("failed opening device for minor %l\n", minor);
+    printk("failed opening device for minor %ld\n", minor);
     return status;
 }
 
@@ -175,10 +175,10 @@ static int device_open( struct inode* inode,
 static int device_release( struct inode* inode, struct file*  file) {
     unsigned long int minor;
     minor = iminor(inode);
-    printk("realising device for minor %l\n", minor);
+    printk("realising device for minor %ld\n", minor);
     // deleting all device channels
     delete_device(minor);
-    printk("realised device for minor %l\n", minor);
+    printk("realised device for minor %ld\n", minor);
     return SUCCESS;
 }
 
@@ -209,19 +209,19 @@ static ssize_t device_read( struct file* file, char __user* buffer, size_t lengt
     }
 
     device_minor = iminor(file->f_path.dentry->d_inode);
-    printk("reading from device for minor %l\n", device_minor);
+    printk("reading from device for minor %ld\n", device_minor);
     d = get_device(device_minor);
     c = get_channel_from_device_ptr(channel_id, d);
 
     if (c == NULL || c->length != 0) {
         // no message in channel
-        printk("no message in channel for device minor %l channel %d\n", device_minor, channel_id);
+        printk("no message in channel for device minor %ld channel %d\n", device_minor, channel_id);
         return -EWOULDBLOCK;
     }
 
     if (c->length > length) {
         // the buffer provided is too small
-        printk("the buffer provided is too small for device minor %l channel %d\n", device_minor, channel_id);
+        printk("the buffer provided is too small for device minor %ld channel %d\n", device_minor, channel_id);
         return -ENOSPC;
     }
 
@@ -229,7 +229,7 @@ static ssize_t device_read( struct file* file, char __user* buffer, size_t lengt
         put_user(c->message[i], &buffer[i]);
     }
 
-    printk("read message of length %d for device minor %l channel %d\n", c->length, device_minor, channel_id);
+    printk("read message of length %ld for device minor %ld channel %d\n", c->length, device_minor, channel_id);
 
     // return the number of output characters used
     return c->length;
@@ -295,7 +295,7 @@ static ssize_t device_write( struct file*       file,
     }
 
     c->length = length;
-    printk("wrote to device message of length %d\n", length);
+    printk("wrote to device message of length %ld\n", length);
     // return the number of input characters used
     return length;
 }
@@ -338,7 +338,7 @@ static int __init simple_init(void)
 
     // Negative values signify an error
     if( rc < 0 ) {
-        printk( KERN_ALERT "%s registraion failed for  %d\n",
+        printk( KERN_ALERT "%s registraion failed for %d\n",
                 DEVICE_FILE_NAME, MAJOR_NUM );
         return rc;
     }
