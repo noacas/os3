@@ -141,6 +141,7 @@ struct channel* create_channel(unsigned long int channel_id, struct device * d) 
         return NULL;
     }
     c->channel_id = channel_id;
+    c->message = 0;
     list_add(&c->channel_list, &d->channel_list_head); // add channel to channel list
     printk("created channel for channel id %lu for device ptr %p successfully\n", channel_id, d);
     return c;
