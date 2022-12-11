@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     }
 
     ret_val = read(  file_desc, &the_message, MAX_MESSAGE_LENGTH );
-    if (ret_val > 0) {
+    if (ret_val >= 0) {
         write(STDOUT_FILENO, the_message, ret_val);
     }
     else {
