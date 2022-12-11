@@ -88,7 +88,7 @@ void delete_all_channels(struct list_head channel_list_head) {
 
 struct message_slot *get_message_slot(unsigned long int device_minor) {
     struct message_slot  *entry = NULL;
-    list_for_each_entry ( entry , & message_slot_list_head, device_list )
+    list_for_each_entry ( entry , & message_slot_list_head, message_slot_list )
     {
         if (entry->device_minor == device_minor)
             return entry;
@@ -98,8 +98,8 @@ struct message_slot *get_message_slot(unsigned long int device_minor) {
 }
 
 int create_message_slot(unsigned long int device_minor, struct file *file) {
-    printk("creating message_slot for minor %lu\n", device_minor);
     struct file_data* file_data;
+    printk("creating message_slot for minor %lu\n", device_minor);
     // if message_slot already exists no need for that
     struct message_slot *m = get_message_slot(device_minor);
     if (m == NULL) {
@@ -178,7 +178,6 @@ static int device_release( struct inode* inode, struct file*  file) {
 // the device file attempts to read from it
 static ssize_t device_read( struct file* file, char __user* buffer, size_t length, loff_t* offset ) {
     ssize_t i;
-    struct message_slot *m;
     struct channel *c;
     struct file_data *file_data;
     unsigned long int channel_id, device_minor;
@@ -241,7 +240,6 @@ static ssize_t device_write( struct file*       file,
 {
     unsigned long int channel_id;
     unsigned long int device_minor;
-    struct message_slot *m;
     struct channel *c;
     struct file_data *file_data;
     ssize_t i;
