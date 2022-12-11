@@ -14,7 +14,8 @@ static char* INVALID_INPUT_ERROR_MESSAGE = "usage: message_reader <file> <channe
 int main(int argc, char *argv[])
 {
     static char the_message[MAX_MESSAGE_LENGTH];
-    int ret_val, file_desc, channel_id;
+    int ret_val, file_desc;
+    unsigned long int channel_id;
 
     if (argc != 3) {
         write(STDERR_FILENO, INVALID_INPUT_ERROR_MESSAGE, strlen(INVALID_INPUT_ERROR_MESSAGE));
