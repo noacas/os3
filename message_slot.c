@@ -100,10 +100,11 @@ struct message_slot *get_message_slot(unsigned long int device_minor) {
 int create_message_slot(unsigned long int device_minor, struct file *file) {
     struct file_data* file_data;
     struct message_slot *m;
-    printk("creating message_slot for minor %lu\n", device_minor);
+    printk("get message_slot for minor %lu\n", device_minor);
     // if message_slot already exists no need for that
     m = get_message_slot(device_minor);
     if (m == NULL) {
+        printk("creating new message_slot for minor %lu\n", device_minor);
         m = (struct message_slot *) kmalloc(sizeof(struct message_slot), GFP_KERNEL);
         if (m == NULL) {
             printk("failed allocating memory to create message_slot\n");
@@ -205,7 +206,7 @@ static ssize_t device_read( struct file* file, char __user* buffer, size_t lengt
 
     printk("reading from message_slot with minor %lu for channel %lu\n", device_minor, channel_id);
 
-    if (c->length != 0) {
+    if (c->length <= 0) {
         // no message in channel
         printk("no message in channel for message_slot with minor %lu channel %lu\n", device_minor, channel_id);
         return -EWOULDBLOCK;
