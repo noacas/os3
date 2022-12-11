@@ -250,13 +250,13 @@ static ssize_t device_write( struct file*       file,
 
     if (file->private_data == NULL) {
         // no message_slot has been set on the file descriptor
-        printk("no message_slot has been set on the file descriptor\n");
+        printk("no message_slot has been set on the file descriptor. private data is NULL\n");
         return -EINVAL;
     }
 
     file_data = (struct file_data*) file->private_data;
 
-    if (file_data->current_channel == NULL || file_data->message_slot) {
+    if (file_data->current_channel == NULL || file_data->message_slot == NULL) {
         // no message_slot has been set on the file descriptor
         printk("no message_slot has been set on the file descriptor\n");
         return -EINVAL;
