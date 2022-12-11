@@ -302,7 +302,7 @@ static ssize_t device_write( struct file*       file,
 
     printk("writing message from temp buffer to message slot\n");
     for( i = 0; i < length; ++i ) {
-        c->message[i] = temp_buffer[i]
+        c->message[i] = temp_buffer[i];
     }
 
     c->length = length;
