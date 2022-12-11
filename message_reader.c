@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
     ret_val = read(  file_desc, &the_message, MAX_MESSAGE_LENGTH );
     if (ret_val >= 0) {
-        if (write(STDOUT_FILENO, the_message, ret_val) != 0) {
+        if (write(STDOUT_FILENO, the_message, ret_val) != ret_val) {
             perror("Error writing message to stdout: ");
             exit(1);
         }
