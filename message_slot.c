@@ -227,7 +227,9 @@ static ssize_t device_read( struct file* file, char __user* buffer, size_t lengt
     }
 
     for( i = 0; i < d->current_channel->length; ++i ) {
-        put_user(c->message[i], &buffer[i]);
+        if (put_user(c->message[i], &buffer[i]) != 0) {
+            return -EIO;
+        }
     }
 
     printk("read message of length %ld for device minor %lu channel %lu\n", c->length, device_minor, channel_id);
@@ -249,6 +251,7 @@ static ssize_t device_write( struct file*       file,
     struct device *d;
     struct channel *c;
     ssize_t i;
+    char temp_buffer[MAX_MESSAGE_LENGTH];
 
     printk("trying to write to device\n");
 
@@ -274,15 +277,27 @@ static ssize_t device_write( struct file*       file,
         printk("max message size\n");
         return -EMSGSIZE;
     }
+    if (buffer == NULL) {
+        // buffer is empty
+        printk("buffer is empty\n");
+        return -EINVAL;
+    }
 
     // delete previous message
     if (c->length != 0) {
+        printk("delete previous message\n");
         c->length = 0;
         kfree(c->message);
     }
 
     for( i = 0; i < length; ++i ) {
-        get_user(c->message[i], &buffer[i]);
+        if (get_user(temp_buffer[i], &buffer[i]) != 0) {
+            return -EIO;
+        }
+    }
+
+    for( i = 0; i < length; ++i ) {
+        c->message[i] = temp_buffer[i]
     }
 
     c->length = length;
