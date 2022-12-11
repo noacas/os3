@@ -23,7 +23,7 @@ MODULE_LICENSE("GPL");
 #include "message_slot.h"
 
 struct channel {
-    unsigned int channel_id;
+    unsigned long int channel_id;
     char* message;
     ssize_t length;
     struct list_head channel_list ;
@@ -31,18 +31,20 @@ struct channel {
 
 struct device {
     unsigned long int device_minor;
+    struct channel * current_channel;
     struct list_head channel_list_head;
     struct list_head device_list ;
 };
 
-struct channel *get_channel_from_device_ptr(unsigned int channel_id, struct device * d);
+
+struct channel *get_channel_from_device_ptr(unsigned long int channel_id, struct device * d);
 struct device *get_device(unsigned long int device_minor);
-struct channel *get_channel(unsigned int channel_id, unsigned long int device_minor);
+struct channel *get_channel(unsigned long int channel_id, unsigned long int device_minor);
 void delete_device(unsigned long int device_minor);
 void delete_device_from_ptr(struct device *d);
 void delete_all_channels(struct list_head channel_list_head);
 void delete_all_devices(void);
-int create_device(unsigned long int device_minor);
+int create_device(unsigned long int device_minor, file * file);
 
 static struct list_head device_list_head;
 
@@ -55,27 +57,27 @@ struct device *get_device(unsigned long int device_minor) {
         if (entry->device_minor == device_minor)
             return entry;
     }
-    printk("could not find device %ld\n", device_minor);
+    printk("could not find device %lu\n", device_minor);
     return NULL;
 }
 
-struct channel *get_channel(unsigned int channel_id, unsigned long int device_minor) {
+struct channel *get_channel(unsigned long int channel_id, unsigned long int device_minor) {
     struct device *d = get_device(device_minor);
     if (d == NULL) {
-        printk("could not find device %ld in order to get channel %d\n", device_minor, channel_id);
+        printk("could not find device %lu in order to get channel %lu\n", device_minor, channel_id);
         return NULL;
     }
     return get_channel_from_device_ptr(channel_id, d);
 }
 
-struct channel *get_channel_from_device_ptr(unsigned int channel_id, struct device * d) {
+struct channel *get_channel_from_device_ptr(unsigned long int channel_id, struct device * d) {
     struct channel  *entry = NULL;
     list_for_each_entry ( entry , & d->channel_list_head, channel_list )
     {
         if (entry->channel_id == channel_id)
             return entry;
     }
-    printk("could not find channel %d from device ptr %p\n", channel_id, d);
+    printk("could not find channel %lu from device ptr %p\n", channel_id, d);
     return NULL;
 }
 
@@ -108,13 +110,13 @@ void delete_all_channels(struct list_head channel_list_head) {
     }
 }
 
-int create_device(unsigned long int device_minor) {
+int create_device(unsigned long int device_minor, file *file) {
     // if device already exists no need for that
+    struct device_data * device_data;
     struct device *d = get_device(device_minor);
     if (d != NULL) {
         return SUCCESS;
     }
-    // TODO: check if device* or simply device is the correct one
     d = (struct device *)kmalloc(sizeof(struct device), GFP_KERNEL);
     if (d == NULL) {
         printk("failed allocating memory to create device\n");
@@ -123,12 +125,15 @@ int create_device(unsigned long int device_minor) {
     d->device_minor = device_minor;
     INIT_LIST_HEAD(&d->channel_list_head); // init channel list
     list_add(&d->device_list, &device_list_head); // add device to device list
-    printk("created device for minor %ld successfully\n", device_minor);
+    d->current_channel=NULL;
+    printk("created device for minor %lu successfully\n", device_minor);
+
+    file->private_data = (void*)d;
+
     return SUCCESS;
 }
 
-struct channel* create_channel(unsigned int channel_id, struct device * d) {
-    // TODO: check if channel* or simply channel is the correct one
+struct channel* create_channel(unsigned long int channel_id, struct device * d) {
     struct channel* c = (struct channel *)kmalloc(sizeof(struct channel), GFP_KERNEL);
     if (c == NULL) {
         printk("failed allocating memory to create channel\n");
@@ -136,7 +141,7 @@ struct channel* create_channel(unsigned int channel_id, struct device * d) {
     }
     c->channel_id = channel_id;
     list_add(&c->channel_list, &d->channel_list_head); // add channel to channel list
-    printk("created channel for channel id %d for device ptr %p successfully\n", channel_id, d);
+    printk("created channel for channel id %lu for device ptr %p successfully\n", channel_id, d);
     return c;
 }
 
@@ -158,13 +163,13 @@ static int device_open( struct inode* inode,
     unsigned long int minor;
     int status;
     minor = iminor(inode);
-    printk("opening device for minor %ld\n", minor);
-    status = create_device(minor);
+    printk("opening device for minor %lu\n", minor);
+    status = create_device(minor, file);
     if (status == SUCCESS) {
-        printk("opened device for minor %ld successfully\n", minor);
+        printk("opened device for minor %lu successfully\n", minor);
         return SUCCESS;
     }
-    printk("failed opening device for minor %ld\n", minor);
+    printk("failed opening device for minor %lu\n", minor);
     return status;
 }
 
@@ -172,10 +177,10 @@ static int device_open( struct inode* inode,
 static int device_release( struct inode* inode, struct file*  file) {
     unsigned long int minor;
     minor = iminor(inode);
-    printk("realising device for minor %ld\n", minor);
+    printk("realising device for minor %lu\n", minor);
     // deleting all device channels
     delete_device(minor);
-    printk("realised device for minor %ld\n", minor);
+    printk("realised device for minor %lu\n", minor);
     return SUCCESS;
 }
 
@@ -184,49 +189,49 @@ static int device_release( struct inode* inode, struct file*  file) {
 // the device file attempts to read from it
 static ssize_t device_read( struct file* file, char __user* buffer, size_t length, loff_t* offset ) {
     ssize_t i;
-    unsigned int channel_id;
-    unsigned long int device_minor;
     struct device *d;
     struct channel *c;
+    unsigned long int channel_id, device_minor;
 
     printk("trying to read from device\n");
 
     if (file->private_data == NULL) {
+        // no device has been set on the file descriptor
+        printk("no device has been set on the file descriptor\n");
+        return -EINVAL;
+    }
+
+    d = (struct device*) file->private_data;
+
+    if (d->current_channel == NULL || d->current_channel->channel_id == 0) {
         // no channel has been set on the file descriptor
         printk("no channel has been set on the file descriptor\n");
         return -EINVAL;
     }
 
-    channel_id = *(unsigned int *) file->private_data;
+    c = d->current_channel;
+    channel_id = c->channel_id;
+    device_minor = d->device_minor;
 
-    if (channel_id == 0) {
-        // no channel has been set on the file descriptor
-        printk("no channel has been set on the file descriptor\n");
-        return -EINVAL;
-    }
+    printk("reading from device for minor %lu for channel %lu\n", device_minor, channel_id);
 
-    device_minor = iminor(file->f_path.dentry->d_inode);
-    printk("reading from device for minor %ld\n", device_minor);
-    d = get_device(device_minor);
-    c = get_channel_from_device_ptr(channel_id, d);
-
-    if (c == NULL || c->length != 0) {
+    if (c->length != 0) {
         // no message in channel
-        printk("no message in channel for device minor %ld channel %d\n", device_minor, channel_id);
+        printk("no message in channel for device minor %lu channel %lu\n", device_minor, channel_id);
         return -EWOULDBLOCK;
     }
 
     if (c->length > length) {
         // the buffer provided is too small
-        printk("the buffer provided is too small for device minor %ld channel %d\n", device_minor, channel_id);
+        printk("the buffer provided is too small for device minor %lu channel %lu\n", device_minor, channel_id);
         return -ENOSPC;
     }
 
-    for( i = 0; i < c->length; ++i ) {
+    for( i = 0; i < d->current_channel->length; ++i ) {
         put_user(c->message[i], &buffer[i]);
     }
 
-    printk("read message of length %ld for device minor %ld channel %d\n", c->length, device_minor, channel_id);
+    printk("read message of length %ld for device minor %lu channel %lu\n", c->length, device_minor, channel_id);
 
     // return the number of output characters used
     return c->length;
@@ -240,7 +245,7 @@ static ssize_t device_write( struct file*       file,
         size_t             length,
         loff_t*            offset)
 {
-    unsigned int channel_id;
+    unsigned long int channel_id;
     unsigned long int device_minor;
     struct device *d;
     struct channel *c;
@@ -249,12 +254,16 @@ static ssize_t device_write( struct file*       file,
     printk("trying to write to device\n");
 
     if (file->private_data == NULL) {
-        // no channel has been set on the file descriptor
-        printk("no channel has been set on the file descriptor\n");
+        // no device has been set on the file descriptor
+        printk("no device has been set on the file descriptor\n");
         return -EINVAL;
     }
 
-    channel_id = *(unsigned int *) file->private_data;
+    d = (struct device*) file->private_data;
+
+    c = d->current_channel;
+    channel_id = c->channel_id;
+    device_minor = d->device_minor;
 
     if (channel_id == 0) {
         // no channel has been set on the file descriptor
@@ -267,24 +276,10 @@ static ssize_t device_write( struct file*       file,
         return -EMSGSIZE;
     }
 
-    device_minor = iminor(file->f_path.dentry->d_inode);
-    d = get_device(device_minor);
-    c = get_channel_from_device_ptr(channel_id, d);
-
-    if (c == NULL) {
-        printk("no channel has been created on the file descriptor for this channel %d\n", channel_id);
-        c = create_channel(channel_id, d);
-        if (c == NULL) {
-            printk("failed to create channel for the file descriptor for this channel %d\n", channel_id);
-            return -ENOMEM;
-        }
-    }
-    else {
-        // delete previous message
-        if (c->length != 0) {
-            c->length = 0;
-            kfree(c->message);
-        }
+    // delete previous message
+    if (c->length != 0) {
+        c->length = 0;
+        kfree(c->message);
     }
 
     for( i = 0; i < length; ++i ) {
@@ -299,16 +294,37 @@ static ssize_t device_write( struct file*       file,
 
 //----------------------------------------------------------------
 static long device_ioctl(struct file* file, unsigned int ioctl_command_id, unsigned long ioctl_param) {
-    // Switch channel id according to the ioctl called
+    struct device *d;
+    struct channel *c;
+    unsigned long int channel_id;
+    // Switch channel according to the ioctl called
     printk("ioctl was invoked\n");
-    if( MSG_SLOT_CHANNEL == ioctl_command_id && ioctl_param != 0 ) {
-        // Get the parameter given to ioctl by the process
-        file->private_data = (void *) &ioctl_param;
-        printk("ioctl was invoked successfully\n");
-        return SUCCESS;
+    if( MSG_SLOT_CHANNEL != ioctl_command_id || ioctl_param == 0 ) {
+        printk("failed in ioctl\n");
+        return -EINVAL;
     }
-    printk("failed in ioctl\n");
-    return -EINVAL;
+
+    // Get the parameter given to ioctl by the process
+    channel_id = ioctl_param;
+    d = (struct device*) file->private_data;
+    if (d == NULL) {
+        printk("device was not created\n");
+        return -ENOMEM;
+    }
+    if (d->current_channel == NULL || d->current_channel->channel_id != channel_id) {
+        c = get_channel_from_device_ptr(channel_id, d);
+        if (c == NULL) {
+            printk("no channel has been created on the file descriptor for this channel %lu\n", channel_id);
+            c = create_channel(channel_id, d);
+            if (c == NULL) {
+                printk("failed to create channel for the file descriptor for this channel %lu\n", channel_id);
+                return -ENOMEM;
+            }
+        }
+        d->current_channel=c;
+    }
+    printk("ioctl was invoked successfully\n");
+    return SUCCESS;
 }
 
 //==================== DEVICE SETUP =============================
