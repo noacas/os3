@@ -114,6 +114,8 @@ int create_device(unsigned long int device_minor, struct file *file) {
     // if device already exists no need for that
     struct device *d = get_device(device_minor);
     if (d != NULL) {
+        printk("device is already created\n");
+        file->private_data = (void*)d;
         return SUCCESS;
     }
     d = (struct device *)kmalloc(sizeof(struct device), GFP_KERNEL);
@@ -298,6 +300,12 @@ static ssize_t device_write( struct file*       file,
             printk("failed reading message from buffer\n");
             return -EIO;
         }
+    }
+
+    c->message = (char *)kmalloc(sizeof(char) * (length));
+    if (c->message == NULL) {
+        printk("failed allocating memory for message\n");
+        return -ENOMEM;
     }
 
     printk("writing message from temp buffer to message slot\n");
