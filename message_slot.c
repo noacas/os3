@@ -302,7 +302,7 @@ static ssize_t device_write( struct file*       file,
         }
     }
 
-    c->message = (char *)kmalloc(sizeof(char) * (length));
+    c->message = (char *)kmalloc(sizeof(char) * (length), GFP_KERNEL);
     if (c->message == NULL) {
         printk("failed allocating memory for message\n");
         return -ENOMEM;
