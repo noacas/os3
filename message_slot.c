@@ -226,8 +226,10 @@ static ssize_t device_read( struct file* file, char __user* buffer, size_t lengt
         return -ENOSPC;
     }
 
+    printk("writing message to buffer\n");
     for( i = 0; i < d->current_channel->length; ++i ) {
         if (put_user(c->message[i], &buffer[i]) != 0) {
+            printk("failed writing message to buffer\n");
             return -EIO;
         }
     }
@@ -290,12 +292,15 @@ static ssize_t device_write( struct file*       file,
         kfree(c->message);
     }
 
+    printk("reading message from buffer\n");
     for( i = 0; i < length; ++i ) {
         if (get_user(temp_buffer[i], &buffer[i]) != 0) {
+            printk("failed reading message from buffer\n");
             return -EIO;
         }
     }
 
+    printk("writing message from temp buffer to message slot\n");
     for( i = 0; i < length; ++i ) {
         c->message[i] = temp_buffer[i]
     }
