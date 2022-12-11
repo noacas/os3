@@ -112,7 +112,6 @@ void delete_all_channels(struct list_head channel_list_head) {
 
 int create_device(unsigned long int device_minor, struct file *file) {
     // if device already exists no need for that
-    struct device_data * device_data;
     struct device *d = get_device(device_minor);
     if (d != NULL) {
         return SUCCESS;
