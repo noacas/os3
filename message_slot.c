@@ -75,7 +75,7 @@ struct channel *get_channel_from_device_ptr(unsigned int channel_id, struct devi
         if (entry->channel_id == channel_id)
             return entry;
     }
-    printk("could not find channel %ld from device ptr %p\n", channel_id, d);
+    printk("could not find channel %d from device ptr %p\n", channel_id, d);
     return NULL;
 }
 
@@ -95,9 +95,6 @@ void delete_device_from_ptr(struct device *d) {
 
 void delete_all_channels(struct list_head channel_list_head) {
     struct channel  *entry, *temp = NULL ;
-    if (channel_list_head == NULL) {
-        printk("channel list head is null in delete all channels\n");
-    }
     list_for_each_entry_safe ( entry , temp, &channel_list_head, channel_list )
     {
         // removing channel from list
